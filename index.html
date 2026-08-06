@@ -1,0 +1,828 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Endgame Robot — Login</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@600;700;800&display=swap" rel="stylesheet">
+<style>
+
+/* ============================================================
+   EDIT ME — quick reference of the class names that control look
+   .bg-glow         -> the moving gold glow behind the login card
+   .product-box-img  -> the logo image at the top of the login card
+   .modal-overlay     -> the deposit popup
+   Colors are all CSS variables in :root below.
+   ============================================================ */
+
+:root{
+  --bg-black:#07070a;
+  --bg-card:#101219;
+  --bg-card-2:#14171f;
+  --bg-input:#161a24;
+  --border-subtle:rgba(255,255,255,0.08);
+  --border-strong:rgba(255,255,255,0.14);
+  --gold-1:#ffd23f;
+  --gold-2:#f2a900;
+  --gold-glow:rgba(255,190,40,0.55);
+  --text-primary:#f5f6f8;
+  --text-secondary:#9aa0ab;
+  --text-muted:#666c78;
+  --success:#22c55e;
+  --danger:#ef4444;
+  --radius-lg:22px;
+  --radius-md:14px;
+  --radius-sm:9px;
+  --font-display:'Poppins', sans-serif;
+  --font-body:'Inter', sans-serif;
+}
+
+*{ box-sizing:border-box; margin:0; padding:0; }
+
+html,body{
+  min-height:100vh;
+  font-family:var(--font-body);
+  color:var(--text-primary);
+  -webkit-font-smoothing:antialiased;
+}
+body{ background:var(--bg-black); }
+
+body{
+  position:relative;
+  overflow-x:hidden;
+}
+
+/* backdrop: grid + top gold wash, matches reference mock */
+.bg-grid{
+  position:fixed;
+  inset:0;
+  z-index:-2;
+  background-image:
+    linear-gradient(rgba(255,255,255,0.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,0.05) 1px, transparent 1px);
+  background-size:54px 54px;
+}
+
+/* the big yellow glow that sits behind the login card and drifts up/down */
+.bg-glow{
+  position:fixed;
+  left:50%;
+  top:0;
+  width:1500px;
+  max-width:230vw;
+  height:1300px;
+  transform:translate(-50%, -22%);
+  z-index:-3;
+  background:radial-gradient(ellipse 55% 42% at 50% 30%,
+      rgba(255,205,40,0.9) 0%,
+      rgba(255,178,10,0.6) 20%,
+      rgba(150,105,0,0.3) 40%,
+      rgba(40,28,0,0.12) 62%,
+      transparent 80%);
+  filter:blur(4px);
+  animation:glowFloat 10s ease-in-out infinite;
+  pointer-events:none;
+}
+@keyframes glowFloat{
+  0%,100%{ transform:translate(-50%, -45vh); }
+  50%{ transform:translate(-50%, 45vh); }
+}
+
+.page{
+  display:none;
+  min-height:100vh;
+  width:100%;
+  position:relative;
+  z-index:1;
+  align-items:center;
+  justify-content:center;
+  animation:fadeIn .5s ease;
+}
+.page.active{ display:flex; }
+@keyframes fadeIn{ from{opacity:0; transform:translateY(8px);} to{opacity:1; transform:translateY(0);} }
+
+/* ===================== LOGIN PAGE ===================== */
+
+#page-login{ position:relative; padding:60px 20px; }
+
+.login-card{
+  position:relative;
+  z-index:1;
+  width:100%;
+  max-width:420px;
+  background:linear-gradient(180deg, var(--bg-card) 0%, #0b0c11 100%);
+  border:1px solid var(--border-subtle);
+  border-radius:var(--radius-lg);
+  padding:36px 32px 28px;
+  box-shadow:0 30px 70px rgba(0,0,0,0.55);
+}
+
+.product-box-img{
+  display:block;
+  width:132px;
+  height:auto;
+  margin:0 auto 22px;
+  border-radius:7px;
+  box-shadow:0 18px 34px rgba(0,0,0,0.55), inset 0 0 0 1px rgba(255,255,255,0.06);
+  transform:perspective(700px) rotateY(-10deg) rotateX(2deg);
+}
+
+.login-card h1{
+  font-family:var(--font-display);
+  font-size:26px;
+  font-weight:700;
+  color:var(--gold-1);
+  text-align:center;
+}
+.login-card .subtitle{
+  text-align:center;
+  color:var(--text-secondary);
+  font-size:13.5px;
+  margin-top:6px;
+  margin-bottom:26px;
+}
+
+.field{ margin-bottom:16px; }
+.field label{
+  display:block;
+  font-size:12.5px;
+  color:var(--text-secondary);
+  margin-bottom:7px;
+  font-weight:500;
+}
+.field input, .field select{
+  width:100%;
+  background:var(--bg-input);
+  border:1px solid var(--border-subtle);
+  border-radius:var(--radius-sm);
+  padding:12px 14px;
+  color:var(--text-primary);
+  font-size:14px;
+  font-family:var(--font-body);
+  outline:none;
+  transition:border-color .15s, box-shadow .15s;
+}
+.field input::placeholder{ color:var(--text-muted); }
+.field input:focus, .field select:focus{
+  border-color:var(--gold-2);
+  box-shadow:0 0 0 3px rgba(242,169,0,0.15);
+}
+
+.forgot-link{
+  display:inline-block;
+  color:var(--gold-1);
+  font-size:12.5px;
+  text-decoration:none;
+  margin-bottom:20px;
+}
+.forgot-link:hover{ text-decoration:underline; }
+
+.btn-gold{
+  width:100%;
+  border:none;
+  cursor:pointer;
+  background:linear-gradient(90deg, var(--gold-1), var(--gold-2));
+  color:#241b00;
+  font-family:var(--font-display);
+  font-weight:700;
+  font-size:15px;
+  padding:14px;
+  border-radius:var(--radius-sm);
+  box-shadow:0 0 24px rgba(242,169,0,0.45);
+  transition:transform .15s, box-shadow .15s;
+}
+.btn-gold:hover{ transform:translateY(-1px); box-shadow:0 0 32px rgba(242,169,0,0.6); }
+.btn-gold:active{ transform:translateY(0); }
+
+.divider{
+  border:none;
+  border-top:1px solid var(--border-subtle);
+  margin:22px 0 16px;
+}
+.signup-line{
+  text-align:center;
+  font-size:13px;
+  color:var(--text-secondary);
+}
+.signup-line a{ color:var(--gold-1); text-decoration:none; font-weight:600; }
+.signup-line a:hover{ text-decoration:underline; }
+
+.error-text{
+  color:var(--danger);
+  font-size:12.5px;
+  margin:-8px 0 14px;
+  display:none;
+}
+.error-text.show{ display:block; }
+
+/* ===================== DASHBOARD PAGE ===================== */
+
+#page-dashboard{ align-items:flex-start; padding:0; }
+.dash-wrap{ width:100%; max-width:920px; margin:0 auto; padding:28px 20px 60px; }
+
+.dash-nav{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  margin-bottom:30px;
+}
+.dash-brand{
+  font-family:var(--font-display);
+  font-weight:700;
+  font-size:18px;
+  color:var(--gold-1);
+  display:flex; align-items:center; gap:8px;
+}
+.dash-brand .dot{
+  width:8px; height:8px; border-radius:50%;
+  background:var(--gold-1); box-shadow:0 0 8px var(--gold-1);
+}
+.btn-outline{
+  background:transparent;
+  border:1px solid var(--border-strong);
+  color:var(--text-secondary);
+  font-family:var(--font-body);
+  font-size:13px;
+  font-weight:600;
+  padding:9px 16px;
+  border-radius:var(--radius-sm);
+  cursor:pointer;
+  transition:border-color .15s, color .15s;
+}
+.btn-outline:hover{ border-color:var(--gold-2); color:var(--gold-1); }
+
+.welcome-block{ margin-bottom:26px; }
+.welcome-block h2{
+  font-family:var(--font-display);
+  font-size:24px;
+  font-weight:700;
+}
+.welcome-block h2 span{ color:var(--gold-1); }
+.welcome-block p{
+  color:var(--text-secondary);
+  font-size:13.5px;
+  margin-top:6px;
+}
+
+.dash-grid{
+  display:grid;
+  grid-template-columns:repeat(3, 1fr);
+  gap:18px;
+}
+@media (max-width:760px){ .dash-grid{ grid-template-columns:1fr; } }
+
+.card{
+  background:linear-gradient(180deg, var(--bg-card) 0%, #0c0d12 100%);
+  border:1px solid var(--border-subtle);
+  border-radius:var(--radius-lg);
+  padding:22px;
+  display:flex;
+  flex-direction:column;
+}
+.card-label{
+  font-size:12px;
+  text-transform:uppercase;
+  letter-spacing:1px;
+  color:var(--text-muted);
+  font-weight:600;
+  display:flex; align-items:center; gap:8px;
+}
+.card-icon{
+  width:32px; height:32px;
+  border-radius:9px;
+  background:rgba(242,169,0,0.12);
+  display:flex; align-items:center; justify-content:center;
+  color:var(--gold-1);
+}
+.card-icon svg{ width:16px; height:16px; }
+
+.balance-value{
+  font-family:var(--font-display);
+  font-size:32px;
+  font-weight:700;
+  margin-top:14px;
+}
+.balance-sub{ font-size:12.5px; color:var(--text-secondary); margin-top:4px; }
+
+.card p.card-copy{
+  color:var(--text-secondary);
+  font-size:13px;
+  margin-top:10px;
+  line-height:1.5;
+  flex:1;
+}
+
+.trade-status{
+  display:flex; align-items:center; gap:8px;
+  margin-top:14px;
+  font-size:13px;
+  color:var(--text-secondary);
+}
+.pulse-dot{
+  width:8px; height:8px; border-radius:50%;
+  background:var(--text-muted);
+  transition:background .2s;
+}
+.trade-status.live .pulse-dot{
+  background:var(--success);
+  box-shadow:0 0 8px var(--success);
+  animation:pulse 1.4s ease-in-out infinite;
+}
+@keyframes pulse{ 0%,100%{ opacity:1; } 50%{ opacity:.35; } }
+
+.ticker{
+  font-family:var(--font-display);
+  font-size:15px;
+  font-weight:600;
+  margin-top:10px;
+  color:var(--text-muted);
+}
+.ticker.live{ color:var(--gold-1); }
+
+.trade-error{
+  color:var(--danger);
+  font-size:12px;
+  line-height:1.4;
+  margin-top:10px;
+  display:none;
+}
+.trade-error.show{ display:block; }
+
+.card-row-top{
+  display:flex; align-items:center; justify-content:space-between;
+}
+
+/* toggle switch */
+.switch{ position:relative; width:42px; height:24px; flex-shrink:0; }
+.switch input{ opacity:0; width:0; height:0; }
+.slider{
+  position:absolute; cursor:pointer; inset:0;
+  background:var(--bg-input);
+  border:1px solid var(--border-strong);
+  border-radius:24px;
+  transition:.2s;
+}
+.slider::before{
+  content:""; position:absolute; height:16px; width:16px; left:3px; top:2.5px;
+  background:var(--text-secondary); border-radius:50%; transition:.2s;
+}
+.switch input:checked + .slider{ background:rgba(242,169,0,0.25); border-color:var(--gold-2); }
+.switch input:checked + .slider::before{ transform:translateX(18px); background:var(--gold-1); }
+
+.card .btn-gold{ margin-top:14px; padding:11px; font-size:13.5px; }
+
+/* ===================== DEPOSIT MODAL ===================== */
+
+.modal-overlay{
+  position:fixed; inset:0;
+  background:rgba(4,4,6,0.72);
+  backdrop-filter:blur(3px);
+  display:none;
+  align-items:center;
+  justify-content:center;
+  z-index:50;
+  padding:20px;
+}
+.modal-overlay.active{ display:flex; }
+
+.modal-card{
+  width:100%; max-width:420px;
+  background:linear-gradient(180deg, var(--bg-card) 0%, #0b0c11 100%);
+  border:1px solid var(--border-subtle);
+  border-radius:var(--radius-lg);
+  padding:26px 24px 24px;
+  animation:fadeIn .25s ease;
+  max-height:88vh;
+  overflow-y:auto;
+}
+.modal-head{
+  display:flex; align-items:center; justify-content:space-between;
+  margin-bottom:18px;
+}
+.modal-head h3{ font-family:var(--font-display); font-size:18px; font-weight:700; }
+.modal-close{
+  background:none; border:none; color:var(--text-secondary);
+  cursor:pointer; font-size:20px; line-height:1; padding:4px;
+}
+.modal-close:hover{ color:var(--gold-1); }
+
+.quick-amounts{ display:flex; gap:8px; margin-top:8px; flex-wrap:wrap; }
+.qa-btn{
+  background:var(--bg-input); border:1px solid var(--border-subtle);
+  color:var(--text-secondary); font-size:12.5px; font-weight:600;
+  padding:7px 12px; border-radius:8px; cursor:pointer; transition:.15s;
+}
+.qa-btn:hover, .qa-btn.selected{ border-color:var(--gold-2); color:var(--gold-1); }
+
+.tabs{ display:flex; gap:8px; margin-bottom:16px; }
+.tab-btn{
+  flex:1;
+  background:var(--bg-input);
+  border:1px solid var(--border-subtle);
+  color:var(--text-secondary);
+  font-family:var(--font-body);
+  font-weight:600;
+  font-size:13.5px;
+  padding:10px;
+  border-radius:var(--radius-sm);
+  cursor:pointer;
+  display:flex; align-items:center; justify-content:center; gap:7px;
+  transition:.15s;
+}
+.tab-btn.active{
+  background:rgba(242,169,0,0.12);
+  border-color:var(--gold-2);
+  color:var(--gold-1);
+}
+.tab-btn .coin-dot{ width:8px; height:8px; border-radius:50%; }
+
+.addr-panel{
+  background:var(--bg-input);
+  border:1px solid var(--border-subtle);
+  border-radius:var(--radius-md);
+  padding:16px;
+  margin-top:4px;
+}
+.addr-panel .network-label{ font-size:11.5px; color:var(--text-muted); text-transform:uppercase; letter-spacing:.5px; }
+.addr-row{
+  display:flex; align-items:center; gap:10px;
+  margin-top:10px;
+  background:var(--bg-card-2);
+  border:1px solid var(--border-subtle);
+  border-radius:9px;
+  padding:10px 12px;
+}
+.addr-text{
+  font-family:'SFMono-Regular', ui-monospace, monospace;
+  font-size:12.5px;
+  color:var(--gold-1);
+  word-break:break-all;
+  flex:1;
+}
+.copy-btn{
+  background:none; border:none; color:var(--text-secondary);
+  cursor:pointer; flex-shrink:0; padding:4px;
+}
+.copy-btn:hover{ color:var(--gold-1); }
+.copy-btn svg{ width:16px; height:16px; }
+
+.min-note{ font-size:12px; color:var(--text-muted); margin-top:10px; }
+
+.toast{
+  position:fixed; bottom:26px; left:50%; transform:translate(-50%, 20px);
+  background:var(--bg-card); border:1px solid var(--border-strong);
+  color:var(--text-primary); padding:12px 18px; border-radius:10px;
+  font-size:13px; box-shadow:0 10px 30px rgba(0,0,0,.5);
+  opacity:0; pointer-events:none; transition:.25s;
+  z-index:100; max-width:320px; text-align:center;
+}
+.toast.show{ opacity:1; transform:translate(-50%, 0); }
+
+</style>
+</head>
+<body>
+
+<div class="bg-glow"></div>
+<div class="bg-grid"></div>
+
+<!-- ============================================================s
+     PAGE 1 — LOGIN
+     ============================================================ -->
+<div id="page-login" class="page active">
+
+  <div class="login-card">
+    <img src="Screenshot 2026-08-06 183207.png" alt="Endgame Robot" class="product-box-img">
+
+    <form id="login-form" onsubmit="handleLogin(event)" novalidate>
+      <div class="field">
+        <label for="broker-name">Broker Name</label>
+        <input id="broker-name" type="text" placeholder="e.g. IC Markets, Exness, XM">
+      </div>
+
+      <div class="field">
+        <label for="email">Email Address</label>
+        <input id="email" type="email" placeholder="Enter your email">
+      </div>
+
+      <div class="field">
+        <label for="license-key">License Key</label>
+        <input id="license-key" type="text" placeholder="XXXX-XXXX-XXXX-XXXX">
+      </div>
+
+      <p class="error-text" id="login-error">Please fill in every field to continue.</p>
+
+      <a href="#" class="forgot-link">Forgot License Key?</a>
+
+      <button type="submit" class="btn-gold">Login</button>
+    </form>
+
+    <hr class="divider">
+    <p class="signup-line">Don't have a license yet? <a href="#">Get one</a></p>
+  </div>
+</div>
+
+<!-- ============================================================
+     PAGE 2 — DASHBOARD
+     ============================================================ -->
+<div id="page-dashboard" class="page">
+  <div class="dash-wrap">
+    <div class="dash-nav">
+      <div class="dash-brand"><span class="dot"></span> Endgame Robot</div>
+      <button class="btn-outline" onclick="logout()">Log out</button>
+    </div>
+
+    <div class="welcome-block">
+      <h2>Welcome, <span id="user-name">Trader</span></h2>
+      <p id="user-broker-line">Connected broker: —</p>
+    </div>
+
+    <div class="dash-grid">
+
+      <!-- Balance -->
+      <div class="card">
+        <div class="card-label">
+          <span class="card-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+          </span>
+          Account Balance
+        </div>
+        <div class="balance-value" id="balance-value">$0.00</div>
+        <div class="balance-sub">Available for withdrawal</div>
+      </div>
+
+      <!-- Deposit -->
+      <div class="card">
+        <div class="card-label">
+          <span class="card-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12l7 7 7-7"/></svg>
+          </span>
+          Deposit
+        </div>
+        <p class="card-copy">Fund your account with BTC or USDT to activate live trading.</p>
+        <button class="btn-gold" onclick="openDeposit()">Deposit</button>
+      </div>
+
+      <!-- Trade real time -->
+      <div class="card">
+        <div class="card-row-top">
+          <div class="card-label">
+            <span class="card-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 17l6-6 4 4 8-8M21 7v6h-6"/></svg>
+            </span>
+            Trade in Real Time
+          </div>
+          <label class="switch">
+            <input type="checkbox" id="trade-toggle" onchange="toggleTrading()">
+            <span class="slider"></span>
+          </label>
+        </div>
+        <div class="trade-status" id="trade-status">
+          <span class="pulse-dot"></span>
+          <span id="trade-status-text">Robot is idle</span>
+        </div>
+        <div class="ticker" id="ticker">EUR/USD —</div>
+        <p class="trade-error" id="trade-error"></p>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================
+     DEPOSIT MODAL
+     ============================================================ -->
+<div id="deposit-modal" class="modal-overlay">
+  <div class="modal-card">
+    <div class="modal-head">
+      <h3>Deposit Funds</h3>
+      <button class="modal-close" onclick="closeDeposit()">&times;</button>
+    </div>
+
+    <div class="field">
+      <label for="deposit-amount">Amount (USD)</label>
+      <input id="deposit-amount" type="number" min="1" placeholder="Enter amount">
+    </div>
+    <div class="quick-amounts" id="quick-amounts"></div>
+
+    <div class="field" style="margin-top:18px;">
+      <label>Pay with</label>
+      <div class="tabs" id="crypto-tabs"></div>
+    </div>
+
+    <div class="addr-panel">
+      <div class="network-label" id="addr-network">Network</div>
+      <div class="addr-row">
+        <span class="addr-text" id="addr-text">—</span>
+        <button class="copy-btn" onclick="copyAddress()" title="Copy address">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+        </button>
+      </div>
+      <p class="min-note" id="min-note">Minimum deposit —</p>
+    </div>
+
+    <button class="btn-gold" style="margin-top:18px;" onclick="confirmDeposit()">I've sent the funds</button>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* ============================================================
+   EDIT ME — every value a real deployment needs to change lives here.
+   ============================================================ */
+const CONFIG = {
+  balance: 0,                      // <-- change this number to set the balance shown on the dashboard
+  currency: 'USD',
+  minTradeBalance: 300,             // <-- minimum balance required before "Trade in Real Time" can be turned on
+
+  wallets: {
+    BTC: {
+      label:   'Bitcoin',
+      symbol:  'BTC',
+      network: 'Bitcoin Network (on-chain)',
+      address: 'REPLACE_WITH_YOUR_REAL_BTC_ADDRESS',
+      color:   '#f7931a',
+      min: 50
+    },
+    USDT: {
+      label:   'Tether',
+      symbol:  'USDT',
+      network: 'USDT · TRC20 (Tron)',
+      address: 'REPLACE_WITH_YOUR_REAL_USDT_ADDRESS',
+      color:   '#26a17b',
+      min: 20
+    }
+  },
+
+  quickAmounts: [100, 500, 1000, 5000]
+};
+/* NOTE: the two wallet addresses above are placeholders. Replace them
+   with real receiving addresses before this page is shown to anyone,
+   and connect balance / deposit confirmation to a real backend —
+   right now both are static, cosmetic values for the UI only. */
+
+let selectedCrypto = 'BTC';
+
+function renderBalance(){
+  document.getElementById('balance-value').textContent =
+    CONFIG.balance.toLocaleString('en-US', { style:'currency', currency: CONFIG.currency });
+}
+
+// ---------- LOGIN ----------
+function handleLogin(e){
+  e.preventDefault();
+  const broker  = document.getElementById('broker-name').value.trim();
+  const email   = document.getElementById('email').value.trim();
+  const license = document.getElementById('license-key').value.trim();
+  const errorEl = document.getElementById('login-error');
+
+  if(!broker || !email || !license){
+    errorEl.classList.add('show');
+    return;
+  }
+  errorEl.classList.remove('show');
+
+  const namePart = email.split('@')[0].replace(/[._]/g, ' ');
+  const niceName = namePart.replace(/\b\w/g, c => c.toUpperCase());
+
+  document.getElementById('user-name').textContent = niceName || 'Trader';
+  document.getElementById('user-broker-line').textContent = `Connected broker: ${broker}`;
+  renderBalance();
+
+  document.getElementById('page-login').classList.remove('active');
+  document.getElementById('page-dashboard').classList.add('active');
+}
+
+function logout(){
+  document.getElementById('page-dashboard').classList.remove('active');
+  document.getElementById('page-login').classList.add('active');
+  document.getElementById('login-form').reset();
+  document.getElementById('trade-toggle').checked = false;
+  toggleTrading(true);
+}
+
+// ---------- DEPOSIT MODAL ----------
+function buildQuickAmounts(){
+  const wrap = document.getElementById('quick-amounts');
+  wrap.innerHTML = '';
+  CONFIG.quickAmounts.forEach(v => {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'qa-btn';
+    b.textContent = '$' + v.toLocaleString();
+    b.onclick = () => {
+      document.getElementById('deposit-amount').value = v;
+      document.querySelectorAll('.qa-btn').forEach(x => x.classList.remove('selected'));
+      b.classList.add('selected');
+    };
+    wrap.appendChild(b);
+  });
+}
+
+function buildCryptoTabs(){
+  const wrap = document.getElementById('crypto-tabs');
+  wrap.innerHTML = '';
+  Object.keys(CONFIG.wallets).forEach(sym => {
+    const w = CONFIG.wallets[sym];
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'tab-btn' + (sym === selectedCrypto ? ' active' : '');
+    b.innerHTML = `<span class="coin-dot" style="background:${w.color}"></span> ${w.symbol}`;
+    b.onclick = () => selectCrypto(sym);
+    wrap.appendChild(b);
+  });
+}
+
+function selectCrypto(sym){
+  selectedCrypto = sym;
+  buildCryptoTabs();
+  const w = CONFIG.wallets[sym];
+  document.getElementById('addr-network').textContent = w.network;
+  document.getElementById('addr-text').textContent = w.address;
+  document.getElementById('min-note').textContent =
+    `Minimum deposit: ${w.min} ${w.symbol} equivalent · funds credit after network confirmation.`;
+}
+
+function openDeposit(){
+  buildQuickAmounts();
+  buildCryptoTabs();
+  selectCrypto(selectedCrypto);
+  document.getElementById('deposit-modal').classList.add('active');
+}
+function closeDeposit(){
+  document.getElementById('deposit-modal').classList.remove('active');
+}
+
+function copyAddress(){
+  const addr = CONFIG.wallets[selectedCrypto].address;
+  navigator.clipboard.writeText(addr).then(() => showToast('Address copied to clipboard'));
+}
+
+function confirmDeposit(){
+  const amt = parseFloat(document.getElementById('deposit-amount').value);
+  if(!amt || amt <= 0){
+    showToast('Enter an amount first');
+    return;
+  }
+  showToast(`We'll credit your account once your ${selectedCrypto} deposit confirms on-chain.`);
+  closeDeposit();
+}
+
+// ---------- TRADE TOGGLE + TICKER ----------
+let tickerInterval = null;
+let tickerPrice = 1.0842;
+
+function toggleTrading(forceOff){
+  const checkbox = document.getElementById('trade-toggle');
+  const errorEl  = document.getElementById('trade-error');
+  let on = forceOff ? false : checkbox.checked;
+
+  // block turning trading on if the balance is below the required minimum
+  if(on && CONFIG.balance < CONFIG.minTradeBalance){
+    checkbox.checked = false;
+    on = false;
+    errorEl.textContent =
+      `You need at least $${CONFIG.minTradeBalance.toLocaleString()} in your account before you can execute trades.`;
+    errorEl.classList.add('show');
+  } else {
+    errorEl.classList.remove('show');
+  }
+
+  const statusEl = document.getElementById('trade-status');
+  const textEl = document.getElementById('trade-status-text');
+  const tickerEl = document.getElementById('ticker');
+
+  if(on){
+    statusEl.classList.add('live');
+    textEl.textContent = 'Robot is scanning the market';
+    tickerEl.classList.add('live');
+    if(!tickerInterval){
+      tickerInterval = setInterval(() => {
+        tickerPrice += (Math.random() - 0.5) * 0.0006;
+        tickerEl.textContent = 'EUR/USD ' + tickerPrice.toFixed(4);
+      }, 1500);
+    }
+  } else {
+    statusEl.classList.remove('live');
+    textEl.textContent = 'Robot is idle';
+    tickerEl.classList.remove('live');
+    tickerEl.textContent = 'EUR/USD —';
+    clearInterval(tickerInterval);
+    tickerInterval = null;
+  }
+}
+
+// ---------- TOAST ----------
+let toastTimer = null;
+function showToast(msg){
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('show'), 3200);
+}
+</script>
+</body>
+</html>
